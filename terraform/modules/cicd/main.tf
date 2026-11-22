@@ -16,6 +16,8 @@ data "aws_iam_openid_connect_provider" "github" {
 }
 
 locals {
+  gh_owner          = split("/", var.github_repository)[0]
+  gh_repo           = split("/", var.github_repository)[1]
   oidc_provider_arn = var.create_oidc_provider ? aws_iam_openid_connect_provider.github[0].arn : data.aws_iam_openid_connect_provider.github[0].arn
 }
 
@@ -34,10 +36,14 @@ data "aws_iam_policy_document" "trust" {
       values   = ["sts.amazonaws.com"]
     }
 
+    # GitHub may send repo:owner/repo:... or its ID format repo:owner@<id>/repo@<id>:...
     condition {
-      test     = "StringEquals"
+      test     = "StringLike"
       variable = "token.actions.githubusercontent.com:sub"
-      values   = ["repo:${var.github_repository}:ref:refs/heads/main"]
+      values = [
+        "repo:${var.github_repository}:ref:refs/heads/main",
+        "repo:${local.gh_owner}@*/${local.gh_repo}@*:ref:refs/heads/main",
+      ]
     }
   }
 }
