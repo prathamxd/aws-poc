@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}Tickets{% endblock %}
+{% block content %}
+<div class="page-head">
+  <h1>Tickets</h1>
+  <a class="button" href="/tickets/new">+ New ticket</a>
+</div>
+<form class="filters" method="get" action="/tickets">
+  <input name="q" value="{{ q }}" placeholder="Search title">
+  <select name="status">
+    <option value="">All statuses</option>
+    {% for s in statuses %}<option value="{{ s }}" {% if s == selected_status %}selected{% endif %}>{{ s }}</option>{% endfor %}
+  </select>
+  <button type="submit">Filter</button>
+</form>
+{% if tickets %}
+<table>
+  <thead><tr><th>#</th><th>Title</th><th>Priority</th><th>Status</th><th>Raised by</th><th>Updated (UTC)</th><th>Files</th></tr></thead>
+  <tbody>
+  {% for t in tickets %}
+  <tr>
+    <td>{{ t.id }}</td>
+    <td><a href="/tickets/{{ t.id }}">{{ t.title }}</a></td>
+    <td><span class="badge prio-{{ t.priority | lower }}">{{ t.priority }}</span></td>
+    <td><span class="badge status-{{ t.status | lower | replace(' ', '-') }}">{{ t.status }}</span></td>
+    <td>{{ t.created_by.username }}</td>
+    <td>{{ t.updated_at.strftime('%d %b %Y %H:%M') }}</td>
+    <td>{{ t.attachments | length }}</td>
+  </tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p class="muted">No tickets match.</p>
+{% endif %}
+{% endblock %}

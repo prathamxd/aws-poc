@@ -1,0 +1,15 @@
+# Copy to terraform.tfvars and edit. terraform.tfvars is git-ignored.
+
+aws_region  = "ap-south-1"
+environment = "poc"
+owner       = "aws-poc-team"
+
+# Your GitHub repo exactly as in its URL (owner/name). Leave "" to skip the CI/CD role.
+github_repository = "prathamxd/aws-poc"
+
+# Alarm notifications (you must click the confirmation link AWS emails you)
+alert_email = ""
+
+# Recommended: allow only your own IP. Find it at https://checkip.amazonaws.com
+# allowed_http_cidrs = ["203.0.113.25/32"]
+allowed_http_cidrs = ["0.0.0.0/0"]

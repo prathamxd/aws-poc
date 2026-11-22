@@ -1,0 +1,69 @@
+#!/bin/bash
+# TicketDesk bootstrap for Amazon Linux 2023 (rendered by Terraform).
+# Contains NO secrets - only resource names and Secrets Manager ARNs.
+# Output of this script: /var/log/cloud-init-output.log
+set -euxo pipefail
+
+dnf install -y docker
+systemctl enable --now docker
+
+install -d -m 0755 /opt/ticketdesk
+
+# Non-secret runtime settings for the container
+cat > /opt/ticketdesk/app.env <<'EOF'
+APP_ENV=production
+AWS_REGION=${aws_region}
+AWS_DEFAULT_REGION=${aws_region}
+DB_HOST=${db_host}
+DB_PORT=${db_port}
+DB_NAME=${db_name}
+DB_SECRET_ARN=${db_secret_arn}
+APP_SECRET_ARN=${app_secret_arn}
+S3_BUCKET=${bucket_name}
+ALLOWED_EXTENSIONS=${allowed_extensions}
+MAX_UPLOAD_MB=${max_upload_mb}
+EOF
+chmod 0644 /opt/ticketdesk/app.env
+
+# Pull the latest image from ECR and run it in the foreground (systemd supervises it)
+cat > /opt/ticketdesk/run.sh <<'EOF'
+#!/bin/bash
+set -euo pipefail
+aws ecr get-login-password --region "${aws_region}" | docker login --username AWS --password-stdin "${registry}"
+docker pull "${image}"
+docker rm -f ticketdesk >/dev/null 2>&1 || true
+exec docker run --name ticketdesk --rm \
+  -p 80:8000 \
+  --env-file /opt/ticketdesk/app.env \
+  --log-driver awslogs \
+  --log-opt awslogs-region="${aws_region}" \
+  --log-opt awslogs-group="${log_group}" \
+  --log-opt awslogs-stream="ec2-$(hostname)" \
+  "${image}"
+EOF
+chmod 0755 /opt/ticketdesk/run.sh
+
+# systemd service: starts on boot, restarts on failure, `systemctl restart ticketdesk` = redeploy.
+# Until the first image is pushed to ECR the service simply retries every 15 seconds.
+cat > /etc/systemd/system/ticketdesk.service <<'EOF'
+[Unit]
+Description=TicketDesk container
+After=docker.service network-online.target
+Wants=network-online.target
+Requires=docker.service
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+ExecStart=/opt/ticketdesk/run.sh
+ExecStop=/usr/bin/docker stop ticketdesk
+Restart=always
+RestartSec=15
+TimeoutStartSec=300
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+systemctl daemon-reload
+systemctl enable --now ticketdesk

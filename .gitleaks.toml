@@ -1,0 +1,20 @@
+# gitleaks configuration: default rules + allowlist for placeholder/test-only values.
+# None of the allowlisted strings is a real credential.
+title = "TicketDesk gitleaks config"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Placeholder values in examples and test-only values"
+paths = [
+  '''\.env\.example$''',
+  '''tests/''',
+]
+regexes = [
+  '''change-me''',
+  '''changeme123local''',
+  '''ci-only''',
+  '''definitely-wrong''',
+  '''test-only''',
+]

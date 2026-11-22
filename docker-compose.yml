@@ -1,0 +1,35 @@
+# Local environment: TicketDesk + PostgreSQL 16 (same engine as Amazon RDS).
+# Usage:  copy .env.example to .env, set the passwords, then:  docker compose up --build
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ticketdesk
+      POSTGRES_USER: ticketdesk
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./db/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ticketdesk -d ticketdesk"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  app:
+    build: .
+    env_file: .env
+    environment:
+      APP_ENV: local-docker
+      DATABASE_URL: postgresql+psycopg2://ticketdesk:${POSTGRES_PASSWORD}@db:5432/ticketdesk
+      UPLOAD_DIR: /app/uploads
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  pgdata:

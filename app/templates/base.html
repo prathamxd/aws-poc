@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}TicketDesk{% endblock %} · TicketDesk</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<header class="topbar">
+  <a class="brand" href="/">TicketDesk</a>
+  {% if current_user %}
+  <nav>
+    <a href="/dashboard">Dashboard</a>
+    <a href="/tickets">Tickets</a>
+    <a href="/tickets/new">New ticket</a>
+    {% if current_user.role == 'admin' %}<a href="/admin/users">Users</a>{% endif %}
+  </nav>
+  <div class="who">
+    {{ current_user.username }} <span class="badge role-{{ current_user.role }}">{{ current_user.role }}</span>
+    · <a href="/logout">Log out</a>
+  </div>
+  {% endif %}
+</header>
+<main>
+  {% for category, message in flashes %}
+  <div class="flash {{ category }}">{{ message }}</div>
+  {% endfor %}
+  {% block content %}{% endblock %}
+</main>
+<footer>TicketDesk v{{ version }} · environment: {{ app_env }}</footer>
+</body>
+</html>

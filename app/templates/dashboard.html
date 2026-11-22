@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block content %}
+<div class="page-head">
+  <h1>Dashboard</h1>
+  <a class="button" href="/tickets/new">+ New ticket</a>
+</div>
+<p class="muted">
+  {% if current_user.role in ['agent', 'admin'] %}All tickets{% else %}Your tickets{% endif %}
+  · attachments stored in <strong>{{ storage_kind | upper }}</strong>
+</p>
+
+<div class="stats">
+  <a class="stat" href="/tickets"><span class="num">{{ total }}</span><span>Total</span></a>
+  {% for status, count in by_status.items() %}
+  <a class="stat status-{{ status | lower | replace(' ', '-') }}" href="/tickets?status={{ status | urlencode }}">
+    <span class="num">{{ count }}</span><span>{{ status }}</span>
+  </a>
+  {% endfor %}
+</div>
+
+<div class="grid2">
+  <section class="card">
+    <h2>By priority</h2>
+    {% for priority, count in by_priority.items() %}
+    <div class="bar-row">
+      <span class="bar-label">{{ priority }}</span>
+      <span class="bar"><span class="fill prio-{{ priority | lower }}" style="width: {{ (count / total * 100) if total else 0 }}%"></span></span>
+      <span class="bar-num">{{ count }}</span>
+    </div>
+    {% endfor %}
+  </section>
+  <section class="card">
+    <h2>Recently updated</h2>
+    {% if recent %}
+    <ul class="plain">
+      {% for t in recent %}
+      <li><a href="/tickets/{{ t.id }}">#{{ t.id }} {{ t.title }}</a>
+        <span class="badge status-{{ t.status | lower | replace(' ', '-') }}">{{ t.status }}</span></li>
+      {% endfor %}
+    </ul>
+    {% else %}
+    <p class="muted">No tickets yet. <a href="/tickets/new">Raise the first one.</a></p>
+    {% endif %}
+  </section>
+</div>
+{% endblock %}

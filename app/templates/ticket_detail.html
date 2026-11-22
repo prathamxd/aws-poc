@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% block title %}Ticket #{{ ticket.id }}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <h1>#{{ ticket.id }} {{ ticket.title }}</h1>
+  <span class="badge big status-{{ ticket.status | lower | replace(' ', '-') }}">{{ ticket.status }}</span>
+</div>
+<p class="muted">
+  Raised by {{ ticket.created_by.username }} on {{ ticket.created_at.strftime('%d %b %Y %H:%M') }} UTC ·
+  priority <span class="badge prio-{{ ticket.priority | lower }}">{{ ticket.priority }}</span>
+</p>
+
+<div class="grid2">
+  <section class="card">
+    <h2>Description</h2>
+    <p class="pre">{{ ticket.description }}</p>
+  </section>
+
+  <section class="card">
+    <h2>Status</h2>
+    {% if next_statuses %}
+    <form method="post" action="/tickets/{{ ticket.id }}/status">
+      <label>Move to
+        <select name="new_status">{% for s in next_statuses %}<option>{{ s }}</option>{% endfor %}</select>
+      </label>
+      <label>Note (optional) <input name="note" maxlength="500"></label>
+      <button type="submit">Update status</button>
+    </form>
+    {% elif current_user.role in ['agent', 'admin'] %}
+    <p class="muted">This ticket is closed.</p>
+    {% else %}
+    <p class="muted">A support agent will update the status.</p>
+    {% endif %}
+    <p class="muted small">Workflow: Open → In Progress → Resolved → Closed (Resolved can be re-opened).</p>
+  </section>
+</div>
+
+<section class="card">
+  <h2>Attachments</h2>
+  {% if attachments %}
+  <table>
+    <thead><tr><th>File</th><th>Size</th><th>Uploaded by</th><th>Lambda processing</th></tr></thead>
+    <tbody>
+    {% for a in attachments %}
+    <tr>
+      <td><a href="/attachments/{{ a.item.id }}/download">{{ a.item.original_name }}</a></td>
+      <td>{{ (a.item.size_bytes / 1024) | round(1) }} KB</td>
+      <td>{{ a.item.uploaded_by.username }}</td>
+      <td>
+        <span class="badge proc-{{ a.processing.status }}">{{ a.processing.status }}</span>
+        <span class="muted small">{{ a.processing.detail }}{% if a.processing.checked_at %} · {{ a.processing.checked_at }}{% endif %}</span>
+      </td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="muted">No attachments.</p>
+  {% endif %}
+  {% if can_upload %}
+  <form class="inline" method="post" action="/tickets/{{ ticket.id }}/attachments" enctype="multipart/form-data">
+    <input type="file" name="file" required>
+    <button type="submit">Upload</button>
+    <small class="muted">Max {{ max_upload_mb }} MB · {{ allowed_extensions }}</small>
+  </form>
+  {% endif %}
+</section>
+
+<section class="card">
+  <h2>History</h2>
+  <ul class="timeline">
+    {% for e in events %}
+    <li>
+      <strong>{{ e.changed_at.strftime('%d %b %Y %H:%M') }}</strong> ·
+      {% if e.from_status %}{{ e.from_status }} → {% endif %}{{ e.to_status }}
+      by {{ e.changed_by.username }}{% if e.note %} – “{{ e.note }}”{% endif %}
+    </li>
+    {% endfor %}
+  </ul>
+</section>
+{% endblock %}

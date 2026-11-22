@@ -1,0 +1,39 @@
+# Secrets and local config - never commit
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+credentials*
+
+# Terraform
+**/.terraform/*
+*.tfstate
+*.tfstate.*
+*.tfvars
+!*.tfvars.example
+crash.log
+*.tfplan
+tfplan
+.terraform.lock.hcl.bak
+terraform/.build/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+.pytest_cache/
+.coverage
+htmlcov/
+coverage.xml
+
+# App runtime data
+*.db
+uploads/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

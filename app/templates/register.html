@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}Register{% endblock %}
+{% block content %}
+<section class="card narrow">
+  <h1>Create an account</h1>
+  {% if error %}<div class="flash error">{{ error }}</div>{% endif %}
+  <form method="post" action="/register">
+    <label>Username <input name="username" value="{{ username or '' }}" minlength="3" maxlength="30" required>
+      <small class="muted">lowercase letters, numbers, dot, dash or underscore</small></label>
+    <label>Password (min 8 characters) <input name="password" type="password" minlength="8" required></label>
+    <label>Confirm password <input name="confirm_password" type="password" minlength="8" required></label>
+    <button type="submit">Register</button>
+  </form>
+  <p class="muted">Already registered? <a href="/login">Log in</a></p>
+</section>
+{% endblock %}
